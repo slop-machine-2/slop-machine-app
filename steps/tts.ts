@@ -2,6 +2,7 @@ import type {ScriptSentence} from "../types/app";
 import myElevenLabsClient from "../clients/elevenlabs.ts";
 import type {CharacterAlignmentResponseModel} from "elevenlabs/api";
 import type {PersonaConfig} from "../personae.mts";
+import {Client} from "@gradio/client";
 
 function getWordLevelTimestamps(alignment: CharacterAlignmentResponseModel) {
   const { characters, character_start_times_seconds, character_end_times_seconds } = alignment;
@@ -12,7 +13,7 @@ function getWordLevelTimestamps(alignment: CharacterAlignmentResponseModel) {
   for (let i = 0; i < characters.length; i++) {
     const char = characters[i];
     const start = character_start_times_seconds[i];
-    const end = character_end_times_seconds[i];
+    // const end = character_end_times_seconds[i];
 
     // Initialize start time for a new word
     if (startTime === null) startTime = start;
@@ -37,6 +38,38 @@ function getWordLevelTimestamps(alignment: CharacterAlignmentResponseModel) {
   return words;
 }
 
+function parseSrtToWords(srtContent: string) {
+  // Regex to capture: [Index] [Start Time] --> [End Time] [Word]
+  // The \s+ matches the line breaks between the time and the word
+  const srtRegex = /\d+\s+(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})\s+(.*)/g;
+  const words = [];
+  let match;
+
+  while ((match = srtRegex.exec(srtContent)) !== null) {
+    const [_, startTime, endTime, word] = match;
+
+    words.push({
+      start: timeToSeconds(startTime!),
+      end: timeToSeconds(endTime!),
+      text: word!.trim(),
+    });
+  }
+
+  return words;
+}
+
+function timeToSeconds(timeStr: string): number {
+  const [hours, minutes, secondsWithMs] = timeStr.split(':');
+  const [seconds, milliseconds] = secondsWithMs!.split(',');
+
+  return (
+    parseInt(hours!) * 3600 +
+    parseInt(minutes!) * 60 +
+    parseInt(seconds!) +
+    parseInt(milliseconds!) / 1000
+  );
+}
+
 async function dummy(folder: string, sentence: ScriptSentence, sentenceId: string) {
   const sourceFile = Bun.file(`/assets/debug/sentence_${sentenceId}.ogg`);
   await Bun.write(folder + `/sentence_${sentenceId}.ogg`, sourceFile);
@@ -44,7 +77,7 @@ async function dummy(folder: string, sentence: ScriptSentence, sentenceId: strin
   sentence.wordsAlignment = await subsFile.json();
 }
 
-export async function sentenceToSpeech(
+async function sentenceToSpeech(
   sentence: ScriptSentence,
   folderName: string,
   sentenceId: string,
@@ -54,8 +87,51 @@ export async function sentenceToSpeech(
     return await dummy(folderName, sentence, sentenceId);
   }
 
+  if (process.env.TTS_PROVIDER === 'elevenlabs') {
+    await sentenceToSpeechElevenlabs(sentence, folderName, sentenceId, persona);
+  }
+  else {
+    await sentenceToSpeechKokoro(sentence, folderName, sentenceId, persona);
+  }
+}
+
+async function sentenceToSpeechKokoro(
+  sentence: ScriptSentence,
+  folderName: string,
+  sentenceId: string,
+  persona: PersonaConfig
+) {
+  const client = await Client.connect("NeuralFalcon/Kokoro-TTS-Subtitle");
+  const result = await client.predict<Record<string, any>>("/KOKORO_TTS_API", {
+    text: sentence.sentence,
+    Language: "American English",
+    voice: persona.kokoroVoiceId,
+    speed: 0.9,
+    translate_text: false,
+    remove_silence: false,
+  });
+
+  const wavUrl = result.data[0].url;
+  const srtUrl = result.data[2].url;
+
+  const audioResponse = await fetch(wavUrl);
+  const audioFilePath = `${folderName}/sentence_${sentenceId}.ogg`;
+  await Bun.write(audioFilePath, audioResponse);
+
+  const srtResponse = await fetch(srtUrl);
+  const srtContent = await srtResponse.text();
+
+  sentence.wordsAlignment = parseSrtToWords(srtContent);
+}
+
+async function sentenceToSpeechElevenlabs(
+  sentence: ScriptSentence,
+  folderName: string,
+  sentenceId: string,
+  persona: PersonaConfig
+) {
   const audio = await myElevenLabsClient.textToSpeech.convertWithTimestamps(
-    persona.voiceId,
+    persona.elevenLabsVoiceId,
     {
       text: sentence.sentence,
       model_id: "eleven_multilingual_v2",

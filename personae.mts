@@ -3,12 +3,14 @@ export type PersonaConfig = {
   theme: string;
   promptPersonality: string;
   stances: string[];
-  voiceId: string;
+  elevenLabsVoiceId: string;
+  kokoroVoiceId: string;
 }
 
 const PERSONAE: Record<string, PersonaConfig> = {
   debug: {
-    voiceId: 'cgSgspJ2msm6clMCkdW9',
+    elevenLabsVoiceId: 'cgSgspJ2msm6clMCkdW9',
+    kokoroVoiceId: 'af_bella',
     personaName: 'debug',
     theme: 'debug',
     promptPersonality: 'I love clocks and I love to crack jokes regarding them.',

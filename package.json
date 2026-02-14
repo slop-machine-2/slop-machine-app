@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.23",
+    "@gradio/client": "^2.0.4",
     "@huggingface/inference": "^4.13.11",
     "ai": "^6.0.78",
     "ai-sdk-ollama": "^3.5.0",
