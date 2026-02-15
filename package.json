@@ -17,6 +17,11 @@
     "ai-sdk-ollama": "^3.5.0",
     "bullmq": "^5.69.1",
     "elevenlabs": "^1.59.0",
+    "google-auth-library": "^10.5.0",
+    "googleapis": "^171.4.0",
     "pexels": "^1.4.0"
+  },
+  "scripts": {
+    "grab-google-token-locally": "bun run scripts/grabLocalGoogleToken.mts"
   }
 }
