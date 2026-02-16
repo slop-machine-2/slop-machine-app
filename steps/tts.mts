@@ -176,7 +176,7 @@ export async function scriptSentencesToSpeech(
 	folderName: string,
 	sentences: ScriptSentence[],
 	persona: PersonaConfig,
-): Promise<string> {
+): Promise<void> {
 	if (process.env.TTS_GENERATION_PARALLEL === "true") {
 		const tasks = sentences.map((sentence, index) => {
 			return sentenceToSpeech(sentence, folderName, `${index + 1}`, persona);
@@ -188,6 +188,4 @@ export async function scriptSentencesToSpeech(
 			await sentenceToSpeech(sentences[i]!, folderName, `${i + 1}`, persona);
 		}
 	}
-
-	return folderName;
 }

@@ -9,8 +9,10 @@ import {
 } from "./utils/utils.mts";
 import { getAuthenticatedClient, uploadShort } from "./utils/google.mts";
 import { remotionRenderQueueEvents, videoQueue } from "./clients/queues.mts";
+import {pickAndDownloadSatisfyingVideo} from "./steps/download_satisfying.mts";
 
 async function fullPipelineForOneVideo() {
+	const seed = Math.random();
 	const persona = getPersona("debug");
 
 	console.log("== Generating script");
@@ -18,13 +20,20 @@ async function fullPipelineForOneVideo() {
 	const folder = await createOuptutFolder();
 
 	console.log(`== Downloading illustrations (${sentences.length} total)`);
-	await downloadIllustrations(sentences, folder);
-
+	console.log("== Downloading satisfying video");
 	console.log("== TTS processing");
-	await scriptSentencesToSpeech(folder, sentences, persona);
+
+	const tasks = [
+		downloadIllustrations(sentences, folder),
+		pickAndDownloadSatisfyingVideo(seed, folder),
+		scriptSentencesToSpeech(folder, sentences, persona),
+	] as const;
+
+	const results = await Promise.all(tasks);
+	const satisfyingVideoPath = results[1];
 
 	console.log(`== Queuing render (${folder})`);
-	await compileAndSaveVideoConfig(folder, persona, sentences);
+	await compileAndSaveVideoConfig(seed, folder, persona, sentences, satisfyingVideoPath);
 	const job = await sendRenderMessage(folder);
 
 	console.log("== Waiting for render to complete");
