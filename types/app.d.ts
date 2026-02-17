@@ -1,4 +1,5 @@
 import type { PersonaConfig } from "../personae.mts";
+import type {FullTopicContext} from "../steps/generate_topic.mts";
 
 type PexelsVideoFile = {
 	id: number;
@@ -19,8 +20,9 @@ export type ScriptSentence = {
 };
 
 export type OutputConfig = {
-	seed: number,
+	seed: number;
 	persona: PersonaConfig;
 	sentences: ScriptSentence[];
+	topic: FullTopicContext;
 	satisfyingVideo: string;
 };

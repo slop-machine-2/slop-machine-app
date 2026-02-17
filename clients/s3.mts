@@ -1,1 +1,1 @@
-const s3 = Bun.s3.file('')
+const s3 = Bun.s3.file("");

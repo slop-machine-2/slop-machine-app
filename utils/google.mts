@@ -1,6 +1,7 @@
 import { type Credentials, OAuth2Client } from "google-auth-library";
 import { createServer } from "http";
 import { google } from "googleapis";
+import type {VideoMetadata} from "../steps/generate_topic.mts";
 
 // 1. Replace these with your credentials from Google Cloud Console
 const CLIENT_ID = process.env.GOOGLE_OAUTH2_CLIENT_ID;
@@ -91,11 +92,13 @@ export async function getAuthenticatedClient(): Promise<OAuth2Client> {
 }
 
 // 2. Focused Execution Function
-export async function uploadShort(auth: OAuth2Client, videoPath: string) {
-	if (process.env.DEBUG !== "false") {
+export async function uploadShort(meta: VideoMetadata, auth: OAuth2Client, videoPath: string) {
+	if (process.env.DEBUG !== "false" || process.env.SKIP_YT_UPLOAD) {
 		console.log("Skipping upload to YT in debug mode");
 		return null;
 	}
+
+	const title = meta.title.split(' ').filter(word => word !== '#Shorts').join(' ') + ' ' + meta.hashtags.filter(tag => tag !== '#Shorts').join(' ') + ' #Shorts';
 
 	const youtube = google.youtube({ version: "v3", auth });
 
@@ -105,8 +108,8 @@ export async function uploadShort(auth: OAuth2Client, videoPath: string) {
 		part: ["snippet", "status"],
 		requestBody: {
 			snippet: {
-				title: "My Vertical Video #Shorts",
-				description: "Uploaded via automated pipeline.",
+				title,
+				description: meta.description,
 				categoryId: "42",
 			},
 			status: {

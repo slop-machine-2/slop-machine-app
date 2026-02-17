@@ -12,17 +12,18 @@
 	},
 	"dependencies": {
 		"@ai-sdk/google": "^3.0.23",
+		"@ai-sdk/huggingface": "^1.0.32",
 		"@gradio/client": "^2.0.4",
-		"@huggingface/inference": "^4.13.11",
 		"ai": "^6.0.78",
-		"ai-sdk-ollama": "^3.5.0",
 		"bullmq": "^5.69.1",
 		"elevenlabs": "^1.59.0",
 		"google-auth-library": "^10.5.0",
 		"googleapis": "^171.4.0",
+		"linkedom": "^0.18.12",
 		"pexels": "^1.4.0"
 	},
 	"scripts": {
-		"grab-google-token-locally": "bun run scripts/grabLocalGoogleToken.mts"
+		"grab-google-token-locally": "bun run scripts/grabLocalGoogleToken.mts",
+		"request-render": "bun run scripts/requestRender.mts"
 	}
 }

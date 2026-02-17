@@ -1,9 +1,8 @@
-import { createOllama } from "ai-sdk-ollama";
-import { google } from "@ai-sdk/google";
-import { generateText } from "ai";
 import myPexelsClient from "../clients/pexels.mts";
 import type { ScriptSentence } from "../types/app";
 import type { PersonaConfig } from "../personae.mts";
+import { parseAiJson, promptLlm } from "../utils/llm.mts";
+import type { FullTopicContext } from "./generate_topic.mts";
 
 function dummy(): ScriptSentence[] {
 	return [
@@ -63,32 +62,55 @@ async function addIllustrationLink(sentences: ScriptSentence[]) {
 	}
 }
 
-export async function generateScript(
+// export async function generateScript(
+// 	persona: PersonaConfig,
+// ): Promise<ScriptSentence[]> {
+// 	if (process.env.DEBUG !== "false") {
+// 		return dummy();
+// 	}
+//
+// 	const text = await promptLlm(`Your task is to generate a punchy, engaging script for a short-form social media video (10-35 seconds).
+// You are performing as a PNG-tuber with the following personality: ${persona.promptPersonality}
+//
+// ### Script Guidelines:
+// 1. Format: Script must be broken down sentence-by-sentence.
+// 2. Length: Each sentence must be under 12 words to maintain a fast, "snackable" pace.
+// 3. Arc:
+//    - Hook: Immediately state a spicy or controversial topic.
+//    - Conflict: Express a strong emotional critique (anger, disbelief, or feigned outrage).
+//    - Vibe: Prioritize character voice and emotion over dry facts.
+//
+// ### Output Format:
+// Return ONLY a raw JSON array of objects. Each object must contain:
+// - "sentence": (string) The spoken line.
+// - "stance": (string) Must be one of: ${persona.stances.join(", ")}.
+// - "illustration": (string) A 1-3 word search term for Pexels stock footage (focus on concrete visuals, e.g., "broken clock" instead of "wasted time").
+//
+// JSON Structure:
+// [
+//   {
+//     "sentence": "",
+//     "stance": "",
+//     "illustration": ""
+//   }
+// ]
+// `, 'gemini');
+//
+// 	const sentences: ScriptSentence[] = parseAiJson(text);
+// 	await addIllustrationLink(sentences);
+// 	return sentences;
+// }
+
+export async function generateScriptOnTopic(
 	persona: PersonaConfig,
+	topic: FullTopicContext,
 ): Promise<ScriptSentence[]> {
 	if (process.env.DEBUG !== "false") {
 		return dummy();
 	}
 
-	const localProvider = createOllama({ baseURL: process.env.LLM_URL });
-	const localModel = localProvider.languageModel("llama3");
-	const cloudModel = google("gemini-2.5-flash");
-
-	const useCloud = true;
-	const model = useCloud ? cloudModel : localModel;
-
-	const { text } = await generateText({
-		model: model,
-		prompt: `Your task is to generate a punchy, engaging script for a short-form social media video (10-35 seconds). 
-You are performing as a PNG-tuber with the following personality: ${persona.promptPersonality}
-
-### Script Guidelines:
-1. Format: Script must be broken down sentence-by-sentence.
-2. Length: Each sentence must be under 12 words to maintain a fast, "snackable" pace.
-3. Arc: 
-   - Hook: Immediately state a spicy or controversial topic.
-   - Conflict: Express a strong emotional critique (anger, disbelief, or feigned outrage).
-   - Vibe: Prioritize character voice and emotion over dry facts.
+	const text = await promptLlm(
+		`${persona.promptScriptGuidelines(topic)}
 
 ### Output Format:
 Return ONLY a raw JSON array of objects. Each object must contain:
@@ -105,21 +127,10 @@ JSON Structure:
   }
 ]
 `,
-	});
+		"gemini",
+	);
 
-	const extracted_text = text.match(/\[[\s\S]*]/);
-	if (!extracted_text) {
-		throw new Error("No JSON array found in the AI response");
-	}
-
-	let sentences: ScriptSentence[];
-	try {
-		sentences = JSON.parse(extracted_text[0]);
-	} catch (e) {
-		console.log("Invalid json from API: ", extracted_text[0]);
-		throw e;
-	}
-
+	const sentences: ScriptSentence[] = parseAiJson(text);
 	await addIllustrationLink(sentences);
 	return sentences;
 }

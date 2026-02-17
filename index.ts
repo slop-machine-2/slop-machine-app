@@ -1,22 +1,27 @@
-import { generateScript } from "./steps/generate_script.mts";
+import { generateScriptOnTopic } from "./steps/generate_script.mts";
 import { scriptSentencesToSpeech } from "./steps/tts.mts";
 import { getPersona } from "./personae.mts";
 import downloadIllustrations from "./steps/download_illustrations.mts";
 import {
 	createOuptutFolder,
 	compileAndSaveVideoConfig,
-	sendRenderMessage, ensureDevelopmentAssets,
+	sendRenderMessage,
+	ensureDevelopmentAssets,
 } from "./utils/utils.mts";
 import { getAuthenticatedClient, uploadShort } from "./utils/google.mts";
 import { remotionRenderQueueEvents, videoQueue } from "./clients/queues.mts";
-import {pickAndDownloadSatisfyingVideo} from "./steps/download_satisfying.mts";
+import { pickAndDownloadSatisfyingVideo } from "./steps/download_satisfying.mts";
+import { getTopic } from "./steps/generate_topic.mts";
 
-async function fullPipelineForOneVideo() {
+async function fullPipelineForOneVideo(personaName: string) {
 	const seed = Math.random();
-	const persona = getPersona("debug");
+	const persona = getPersona(personaName);
+
+	console.log("== Generating topic");
+	const topic = await getTopic(persona);
 
 	console.log("== Generating script");
-	const sentences = await generateScript(persona);
+	const sentences = await generateScriptOnTopic(persona, topic);
 	const folder = await createOuptutFolder();
 
 	console.log(`== Downloading illustrations (${sentences.length} total)`);
@@ -33,7 +38,14 @@ async function fullPipelineForOneVideo() {
 	const satisfyingVideoPath = results[1];
 
 	console.log(`== Queuing render (${folder})`);
-	await compileAndSaveVideoConfig(seed, folder, persona, sentences, satisfyingVideoPath);
+	await compileAndSaveVideoConfig(
+		seed,
+		folder,
+		persona,
+		sentences,
+		satisfyingVideoPath,
+		topic
+	);
 	const job = await sendRenderMessage(folder);
 
 	console.log("== Waiting for render to complete");
@@ -44,21 +56,17 @@ async function fullPipelineForOneVideo() {
 		return;
 	}
 
-	console.log("== Uploading to Youtube")
+	console.log("== Uploading to Youtube");
 	const googleCredentials = await getAuthenticatedClient();
-	await uploadShort(googleCredentials, folder + "/render.mp4");
+	await uploadShort(topic.videoMetadata, googleCredentials, folder + "/render.mp4");
 
 	if (process.env.DEBUG !== "false") {
-		console.log("== Debug mode, closing queue and exiting")
+		console.log("== Debug mode, closing queue and exiting");
 		await videoQueue.close();
 		await remotionRenderQueueEvents.close();
 	}
 }
 
+const personaName = process.argv[2] ?? 'debug';
 await ensureDevelopmentAssets();
-await fullPipelineForOneVideo();
-// const personaName = 'debug';
-// const personaSourcePrefix = `personae/${personaName}/`;
-// console.log(`👤 Syncing persona [${personaName}] from S3 to }...`);
-// const s3Objects = await Bun.s3.list({ prefix: 'output' });
-// console.log(s3Objects)
+await fullPipelineForOneVideo(personaName);

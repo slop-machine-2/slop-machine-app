@@ -1,8 +1,9 @@
-import type {OutputConfig, ScriptSentence} from "../types/app";
-import type {PersonaConfig} from "../personae.mts";
-import {videoQueue} from "../clients/queues.mts";
+import type { OutputConfig, ScriptSentence } from "../types/app";
+import type { PersonaConfig } from "../personae.mts";
+import { videoQueue } from "../clients/queues.mts";
 import { join, relative } from "node:path";
 import { readdir } from "node:fs/promises";
+import type {FullTopicContext} from "../steps/generate_topic.mts";
 
 export async function createOuptutFolder() {
 	const now = new Date();
@@ -20,12 +21,14 @@ export async function compileAndSaveVideoConfig(
 	folder: string,
 	persona: PersonaConfig,
 	sentences: ScriptSentence[],
-	satisfyingVideoPath: string
+	satisfyingVideoPath: string,
+	topic: FullTopicContext
 ) {
 	const outputConfig: OutputConfig = {
 		seed,
 		satisfyingVideo: satisfyingVideoPath,
 		persona,
+		topic,
 		sentences,
 	};
 
@@ -97,17 +100,20 @@ export async function fetchWithRetry(
 }
 
 export async function ensureDevelopmentAssets() {
-	if (process.env.DEBUG === 'false') {
+	if (process.env.DEBUG === "false") {
 		return;
 	}
 
-	const personaeExist = await Bun.s3.list({prefix: "personae/debug/"});
+	const personaeExist = await Bun.s3.list({ prefix: "personae/debug/" });
 
 	if (!personaeExist.contents) {
 		console.log("Syncing personae/debug...");
 		// In a real app, you'd loop through your local /assets/personae/debug folder
-		const personaDir = '/assets/personae/debug';
-		const files = await readdir(personaDir, { recursive: true, withFileTypes: true });
+		const personaDir = "/assets/personae/debug";
+		const files = await readdir(personaDir, {
+			recursive: true,
+			withFileTypes: true,
+		});
 
 		for (const f of files) {
 			if (f.isFile()) {
@@ -115,7 +121,7 @@ export async function ensureDevelopmentAssets() {
 
 				// Calculate the S3 key (e.g., "personae/debug/subdir/file.json")
 				const relativePath = relative(personaDir, fullLocalPath);
-				const s3Key = join('personae/debug/', relativePath);
+				const s3Key = join("personae/debug/", relativePath);
 
 				await Bun.s3.write(s3Key, Bun.file(fullLocalPath));
 			}
