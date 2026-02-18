@@ -11,14 +11,14 @@ import {
 import { getAuthenticatedClient, uploadShort } from "./utils/google.mts";
 import { remotionRenderQueueEvents, videoQueue } from "./clients/queues.mts";
 import { pickAndDownloadSatisfyingVideo } from "./steps/download_satisfying.mts";
-import { getTopic } from "./steps/generate_topic.mts";
+import { generateTopic } from "./steps/generate_topic.mts";
 
 async function fullPipelineForOneVideo(personaName: string) {
 	const seed = Math.random();
 	const persona = getPersona(personaName);
 
 	console.log("== Generating topic");
-	const topic = await getTopic(persona);
+	const topic = await generateTopic(persona);
 
 	console.log("== Generating script");
 	const sentences = await generateScriptOnTopic(persona, topic);
@@ -71,6 +71,6 @@ async function fullPipelineForOneVideo(personaName: string) {
 	}
 }
 
-const personaName = process.argv[2] ?? "debug";
+const personaName = process.argv[2] ?? "razmo";
 await ensureDevelopmentAssets();
 await fullPipelineForOneVideo(personaName);

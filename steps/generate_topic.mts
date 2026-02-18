@@ -100,7 +100,7 @@ async function getRandomTopic(persona: PersonaConfig): Promise<VideoMetadata> {
 	return parseAiJson(answer);
 }
 
-export async function getTopic(
+export async function generateTopic(
 	persona: PersonaConfig,
 ): Promise<FullTopicContext> {
 	if (process.env.DEBUG !== "false") {

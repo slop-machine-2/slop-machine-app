@@ -24,16 +24,16 @@ export type PersonaConfig = {
 };
 
 const PERSONAE: Record<string, PersonaConfig> = {
-	debug: {
-		id: "debug",
+	razmo: {
+		id: "razmo",
 		size: 1500,
 		posXRange: 0.6,
 		posXOffset: 0.2,
 		groupPosXRange: 0.2,
-		groupPosXOffset: 0.7,
+		groupPosXOffset: 0.6,
 		elevenLabsVoiceId: "cgSgspJ2msm6clMCkdW9",
-		kokoroVoiceId: "af_bella",
-		personaName: "Debug",
+		kokoroVoiceId: "af_jessica",
+		personaName: "Razmo",
 		theme: "debug",
 		themeVolume: 0.1,
 		language: "en-US",
@@ -125,13 +125,13 @@ ${topic.latestNews?.length ? "The latest headlines on this topic: " + topic.late
 		groupPosXRange: 0.2,
 		groupPosXOffset: 0.2,
 		elevenLabsVoiceId: "cgSgspJ2msm6clMCkdW9",
-		kokoroVoiceId: "af_bella",
-		personaName: "Redneck",
+		kokoroVoiceId: "am_santa",
+		personaName: "Peter",
 		theme: "debug",
 		themeVolume: 0.2,
 		language: "en-US",
 		promptPersonality:
-			"I am a woman from Texas and like politics and geopolotics. I love conspiracies, and often go against the popular opinion. I am right winged and insulting to people and things I dislike. My sources of information can be inaccurate or opinionated.",
+			"I am a man from Texas and like politics and geopolotics. I love conspiracies, and often go against the popular opinion. I am right winged and insulting to people and things I dislike. My sources of information can be inaccurate or opinionated.",
 		promptVideoMetaGivenNews(topic: string, newsItems: NewsItem[]) {
 			return `### Role
 You are a viral content strategist specializing in the 2026 "Rage-Bait" economy. Your goal is to generate high-engagement metadata for a PNGTuber’s YouTube Short. The survival of this creator depends on sparking a "comment war."

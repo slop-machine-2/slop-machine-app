@@ -10,23 +10,28 @@ import {
 import { getAuthenticatedClient, uploadShort } from "./utils/google.mts";
 import { remotionRenderQueueEvents, videoQueue } from "./clients/queues.mts";
 import { pickAndDownloadSatisfyingVideo } from "./steps/download_satisfying.mts";
-import { type FullTopicContext } from "./steps/generate_topic.mts";
+import {generateTopic} from "./steps/generate_topic.mts";
 import { getPersonaGroup } from "./persona_group.mts";
+import {getPersona} from "./personae.mts";
 
-async function fullPipelineForOneVideo(personaGroupName: string) {
+async function fullPipelineForOneVideo(personaGroupName: string, personaCarryingConversation: string) {
 	const seed = Math.random();
 	const personaGroup = getPersonaGroup(personaGroupName);
+	const carryingPersona = getPersona(personaCarryingConversation);
 
 	console.log("== Generating topic");
-	const topic: FullTopicContext = {
-		topic: "Trump wants to make Canada the 51st US state",
-		latestNews: [],
-		videoMetadata: {
-			description: "Trump threatens to make moves to get a hold of Canada.",
-			title: "Trump wants Canada!",
-			hashtags: ["#Canada", "#Trump"],
-		},
-	};
+	const topic = await generateTopic(carryingPersona);
+	console.log('= Topic: ', topic.topic);
+
+	// const topic: FullTopicContext = {
+	// 	topic: "Trump wants to make Canada the 51st US state",
+	// 	latestNews: [],
+	// 	videoMetadata: {
+	// 		description: "Trump threatens to make moves to get a hold of Canada.",
+	// 		title: "Trump wants Canada!",
+	// 		hashtags: ["#Canada", "#Trump"],
+	// 	},
+	// };
 
 	console.log("== Generating script");
 	const sentences = await generateScriptOnTopicForGroup(personaGroup, topic);
@@ -54,7 +59,7 @@ async function fullPipelineForOneVideo(personaGroupName: string) {
 		satisfyingVideoPath,
 		topic,
 	);
-	const job = await sendRenderMessage(folder, process.env.DEBUG !== "false");
+	const job = await sendRenderMessage(folder, {showProgress: process.env.DEBUG !== 'false'});
 
 	console.log("== Waiting for render to complete");
 	try {
@@ -80,4 +85,4 @@ async function fullPipelineForOneVideo(personaGroupName: string) {
 }
 
 await ensureDevelopmentAssets();
-await fullPipelineForOneVideo("redneckBffDebug");
+await fullPipelineForOneVideo("redneckBffDebug", "redneck");

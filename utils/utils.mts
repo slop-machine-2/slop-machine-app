@@ -25,32 +25,47 @@ export async function compileAndSaveVideoConfig(
 	satisfyingVideoPath: string,
 	topic: FullTopicContext,
 ) {
+	const personaGroup = "personae" in personae
+		? personae
+		: {
+			personae: [personae],
+			prompt: "",
+			theme: personae.theme,
+			themeVolume: personae.themeVolume,
+		};
+
+	// Validate sentences
+	for (const sentence of sentences) {
+		const persona = personaGroup.personae.find(p => p.id === sentence.personaId);
+
+		if (!persona) {
+			throw new Error('persona not found in group')
+		}
+
+		if (!persona.stances.includes(sentence.stance)) {
+			throw new Error('Sentence makes use of an unknown stance')
+		}
+	}
+
+
 	const outputConfig: OutputConfig = {
 		seed,
 		video: {
 			fps:
-				process.env.DEBUG === "false" || process.env.VIDEO_QUALITY === "low"
+				process.env.DEBUG === "false" || process.env.VIDEO_QUALITY === "high"
 					? 60
 					: 25,
 			width:
-				process.env.DEBUG === "false" || process.env.VIDEO_QUALITY === "low"
+				process.env.DEBUG === "false" || process.env.VIDEO_QUALITY === "high"
 					? 1080
 					: 720,
 			height:
-				process.env.DEBUG === "false" || process.env.VIDEO_QUALITY === "low"
+				process.env.DEBUG === "false" || process.env.VIDEO_QUALITY === "high"
 					? 1920
 					: 1280,
 		},
 		satisfyingVideo: satisfyingVideoPath,
-		personae:
-			"personae" in personae
-				? personae
-				: {
-						personae: [personae],
-						prompt: "",
-						theme: personae.theme,
-						themeVolume: personae.themeVolume,
-					},
+		personae: personaGroup,
 		topic,
 		sentences,
 	};
@@ -65,7 +80,7 @@ export async function compileAndSaveVideoConfig(
 
 export async function sendRenderMessage(
 	folder: string,
-	options: Record<string, any> = {},
+	options: {fake?: boolean, showProgress?: boolean} = {},
 ) {
 	return await videoQueue.add(
 		"remotion-render",
@@ -158,7 +173,7 @@ export async function ensureDevelopmentAssets() {
 		return;
 	}
 
-	ensurePersona("debug");
+	ensurePersona("razmo");
 	ensurePersona("redneck");
 
 	// 2. Check for "audio/themes/debug.ogg"

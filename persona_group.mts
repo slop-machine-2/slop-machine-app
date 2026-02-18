@@ -13,7 +13,7 @@ const PERSONA_GROUPS: Record<string, PersonaGroupConfig> = {
 			"Redneck and Debug are very good friends. Debug often asks questions to Redneck about her opinionated political views, and keeps her light hearted spirit.",
 		theme: "debug",
 		themeVolume: 0.1,
-		personae: [getPersona("debug"), getPersona("redneck")],
+		personae: [getPersona("razmo"), getPersona("redneck")],
 	},
 };
 

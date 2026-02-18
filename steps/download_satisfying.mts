@@ -41,6 +41,8 @@ async function downloadSatisfyingVideo(
 		"bun",
 		"--download-sections",
 		`*${segment.start}-${segment.end}`,
+		"--downloader", "ffmpeg",
+		"--downloader-args", "ffmpeg:-c:v libvpx-vp9 -c:a libopus",
 		"-o",
 		tempPath,
 		url,
