@@ -123,7 +123,7 @@ async function sentenceToSpeechKokoro(
 		text: sentence.sentence,
 		Language: "American English",
 		voice: persona.kokoroVoiceId,
-		speed: 0.9,
+		speed: 0.95,
 		translate_text: false,
 		remove_silence: false,
 	});

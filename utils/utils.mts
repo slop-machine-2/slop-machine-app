@@ -53,7 +53,7 @@ export async function compileAndSaveVideoConfig(
 		video: {
 			fps:
 				process.env.DEBUG === "false" || process.env.VIDEO_QUALITY === "high"
-					? 60
+					? 59
 					: 25,
 			width:
 				process.env.DEBUG === "false" || process.env.VIDEO_QUALITY === "high"
